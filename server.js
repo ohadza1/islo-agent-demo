@@ -54,24 +54,50 @@ app.post("/api/slogan", async (req, res) => {
   }
 });
 
+// Async poster generation — fal.subscribe blocks for the full image-gen time
+// (60–120s for openai/gpt-image-2), which is longer than the Islo share proxy
+// timeout. Instead we submit to the queue here (returns in ~0.3s) and let the
+// client poll the status endpoint below.
 app.post("/api/poster", async (req, res) => {
   try {
     const fal = getFal();
     const brand = (req.body && req.body.brand) || "Acme";
-    const r = await fal.subscribe(IMAGE_MODEL, {
+    const r = await fal.queue.submit(IMAGE_MODEL, {
       input: {
         prompt: POSTER_PROMPT(brand),
         image_size: PORTRAIT_9_16,
         num_images: 1,
         output_format: "png",
       },
-      logs: false,
     });
-    const imageUrl = r.data?.images?.[0]?.url;
-    if (!imageUrl) throw new Error("no image url in fal response");
-    res.json({ imageUrl });
+    res.json({ request_id: r.request_id });
   } catch (err) {
     console.error("/api/poster error:", err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Status / result for a queued poster job. Returns one of:
+//   { status: "IN_QUEUE",     queue_position }
+//   { status: "IN_PROGRESS" }
+//   { status: "COMPLETED",    imageUrl }
+//   { status: "FAILED",       error }
+app.get("/api/poster/:requestId", async (req, res) => {
+  try {
+    const fal = getFal();
+    const { requestId } = req.params;
+    const s = await fal.queue.status(IMAGE_MODEL, { requestId, logs: false });
+    if (s.status === "COMPLETED") {
+      const result = await fal.queue.result(IMAGE_MODEL, { requestId });
+      const imageUrl = result.data?.images?.[0]?.url;
+      return res.json({ status: "COMPLETED", imageUrl });
+    }
+    return res.json({
+      status: s.status,
+      queue_position: s.queue_position,
+    });
+  } catch (err) {
+    console.error(`/api/poster/${req.params.requestId} error:`, err.message);
     res.status(500).json({ error: err.message });
   }
 });

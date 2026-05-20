@@ -1,0 +1,26 @@
+sandbox: islo-agent-demo
+image: docker.io/library/node:22-bookworm
+cpu: 2
+memory_mb: 4096
+disk_gb: 10
+workdir: islo-agent-demo                    # relative to /workspace (absolute /workspace/... is rejected)
+
+# Reuse the existing gateway profile that already has 11 rules
+# (OpenAI bearer-inject, 4 fal header-inject, 6 plain-allow). Phase 2 adds an Anthropic rule.
+gateway_profile: brand-secrets
+
+env:
+  OPENAI_API_KEY: "sk-gateway-injected-placeholder"
+  FAL_KEY: "gatewayid:gatewaysecret"
+  PORT: "3000"
+  HOST: "0.0.0.0"                           # NEVER bind to localhost (Islo sandbox has no usable IPv6)
+
+# NOTE: no `sources:` block — we clone via `islo use --source github://ohadza1/islo-agent-demo`.
+# That path copies the user's local git identity into the sandbox at provisioning,
+# bypassing the phantom-token / git-remote-github-helper problems of the sources: path.
+
+setup_scripts:
+  - name: Install dependencies
+    script: npm ci
+  - name: Start server with pm2 (persistent)
+    script: ./node_modules/.bin/pm2 start server.js --name app

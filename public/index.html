@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Islo Agent Demo</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <main>
+    <header>
+      <h1>Islo Agent Demo</h1>
+      <p class="subtitle">Brand slogan + poster generated via OpenAI + fal.ai — with keys injected at egress by the Islo gateway.</p>
+    </header>
+
+    <section id="env-panel">
+      <h2>Sandbox env (live from <code>/health</code>)</h2>
+      <p class="hint">The previews below should look like placeholder strings, not real API keys. The fact that the calls below still succeed proves the gateway swaps them in flight.</p>
+      <pre id="env-output">loading…</pre>
+    </section>
+
+    <section id="slogan-section">
+      <h2>1. Generate a brand slogan (OpenAI)</h2>
+      <div class="controls">
+        <input id="brand-input" placeholder="Brand name (e.g. Acme)" value="Acme">
+        <button id="gen-slogan">Generate slogan</button>
+      </div>
+      <pre id="slogan-output"></pre>
+    </section>
+
+    <section id="poster-section">
+      <h2>2. Generate a brand poster (fal.ai)</h2>
+      <button id="gen-poster">Generate poster</button>
+      <div id="poster-status"></div>
+      <img id="poster-output" alt="">
+    </section>
+  </main>
+
+  <script type="module" src="/app.js"></script>
+</body>
+</html>

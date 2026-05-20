@@ -3,9 +3,15 @@
 
 const express = require("express");
 const path = require("path");
-const { getOpenAI, GPT_MODEL } = require("./src/openai");
-const { getFal, IMAGE_MODEL, PORTRAIT_9_16 } = require("./src/fal");
+const { getOpenAI, GPT_MODEL, getOpenAIKey } = require("./src/openai");
+const { getFal, IMAGE_MODEL, PORTRAIT_9_16, getFalKey } = require("./src/fal");
 const { SLOGAN_PROMPT, POSTER_PROMPT } = require("./src/prompts");
+
+// Preview an opaque token, hiding everything after the first ~16 chars.
+function preview(s) {
+  s = s || "";
+  return s.length > 16 ? s.slice(0, 16) + "…" : s;
+}
 
 const app = express();
 const startedAt = Date.now();
@@ -19,8 +25,12 @@ app.get("/health", (_req, res) => {
   res.json({
     ok: true,
     uptimeSec: Math.floor((Date.now() - startedAt) / 1000),
-    openai_key_preview: (process.env.OPENAI_API_KEY || "").slice(0, 14) + "…",
-    fal_key_preview: (process.env.FAL_KEY || "").slice(0, 14) + "…",
+    // What the SDK actually sees in this process — typically an
+    // `islo_phantom_<sandbox-id>_<provider>` token that the gateway swaps for
+    // the real credential at egress. The fact that the API calls below
+    // succeed despite the previews showing a phantom IS the demo.
+    openai_key_preview: preview(getOpenAIKey()),
+    fal_key_preview: preview(getFalKey()),
     model: GPT_MODEL,
   });
 });

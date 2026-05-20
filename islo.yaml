@@ -10,10 +10,15 @@ workdir: islo-agent-demo                    # relative to /workspace (absolute /
 gateway_profile: brand-secrets
 
 env:
-  OPENAI_API_KEY: "sk-gateway-injected-placeholder"
-  FAL_KEY: "gatewayid:gatewaysecret"
   PORT: "3000"
   HOST: "0.0.0.0"                           # NEVER bind to localhost (Islo sandbox has no usable IPv6)
+
+# OPENAI_API_KEY and FAL_KEY are deliberately NOT set here. The app derives
+# them at runtime via src/islo-phantom.js — constructing the
+# `islo_phantom_<sandbox-id>_<provider>` token format the Islo gateway
+# recognizes and swaps for the real key at egress. (Setting user-defined
+# strings here would NOT be swapped — the gateway only acts on phantom-formatted
+# tokens.)
 
 # NOTE: no `sources:` block — we clone via `islo use --source github://ohadza1/islo-agent-demo`.
 # That path copies the user's local git identity into the sandbox at provisioning,

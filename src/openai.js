@@ -1,19 +1,29 @@
-// Cached OpenAI client. Throws if the env var is missing — the Islo sandbox
-// receives a placeholder string for OPENAI_API_KEY, which is enough for the
-// SDK to initialize. The gateway substitutes the real bearer token at egress.
+// Cached OpenAI client. In a local dev env, set OPENAI_API_KEY in .env.local.
+// In an Islo sandbox, leave OPENAI_API_KEY UNSET — the helper derives the
+// `islo_phantom_<sandbox-id>_openai` token that the gateway swaps for the real
+// OpenAI key at egress. Either way the SDK gets a non-empty string and works.
 
 const OpenAI = require("openai");
+const { isloPhantom } = require("./islo-phantom");
 
 let cached = null;
 
+function getOpenAIKey() {
+  return process.env.OPENAI_API_KEY || isloPhantom("openai");
+}
+
 function getOpenAI() {
   if (cached) return cached;
-  const apiKey = process.env.OPENAI_API_KEY;
-  if (!apiKey) throw new Error("Missing OPENAI_API_KEY environment variable");
+  const apiKey = getOpenAIKey();
+  if (!apiKey) {
+    throw new Error(
+      "Missing OPENAI_API_KEY and no Islo phantom available (no GITHUB_TOKEN, CURSOR_API_KEY, etc. set)"
+    );
+  }
   cached = new OpenAI({ apiKey });
   return cached;
 }
 
 const GPT_MODEL = "gpt-4.1-mini";
 
-module.exports = { getOpenAI, GPT_MODEL };
+module.exports = { getOpenAI, GPT_MODEL, getOpenAIKey };

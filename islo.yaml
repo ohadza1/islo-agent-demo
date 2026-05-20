@@ -20,7 +20,9 @@ env:
 # bypassing the phantom-token / git-remote-github-helper problems of the sources: path.
 
 setup_scripts:
+  # Use `npm install` (forgiving) rather than `npm ci` (strict) — locally the
+  # generated lockfile had a transient inconsistency that made `npm ci` fail.
   - name: Install dependencies
-    script: npm ci
+    script: npm install --no-audit --no-fund
   - name: Start server with pm2 (persistent)
     script: ./node_modules/.bin/pm2 start server.js --name app
